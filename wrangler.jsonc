@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "baygames",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-11",
+  "workers_dev": true,
+  "vars": {
+    "CALENDAR_NAME": "Bay Sports Games"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

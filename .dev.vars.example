@@ -1,0 +1,3 @@
+# Copy to .dev.vars (gitignored). Do not commit the real feed URL.
+# Production: npx wrangler secret put SOURCE_ICAL_URL
+SOURCE_ICAL_URL=
