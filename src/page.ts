@@ -18,6 +18,10 @@ export function subscribeLinks(icsUrl: string): SubscribeLinks {
   return { httpsUrl: icsUrl, webcalUrl, googleUrl };
 }
 
+export function mapsSearchUrl(location: string): string {
+  return `https://maps.google.com/maps?q=${encodeURIComponent(location)}`;
+}
+
 const SPORT_GLYPHS: Array<[RegExp, string]> = [
   [/\bflag football\b/i, "🏈"],
   [/\bwater polo\b/i, "🤽"],
@@ -89,9 +93,26 @@ const STYLES = `
 * { box-sizing: border-box; }
 body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--navy); }
 .masthead { background: var(--navy-deep); }
-.masthead-inner { max-width: 42rem; margin: 0 auto; padding: 1.15rem 1.15rem 1.05rem; }
+.masthead-inner { max-width: 42rem; margin: 0 auto; padding: 1.15rem 1.15rem 1.05rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
 .brand { text-decoration: none; color: var(--gold); font-weight: 750; font-size: 1.15rem; letter-spacing: 0.04em; }
 .tag { margin: 0.25rem 0 0; color: var(--sky); font-size: 0.82rem; }
+.about { flex: none; margin-top: 0.15rem; }
+.about summary {
+  width: auto;
+  height: auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--gold);
+  font: 650 0.82rem/1.2 ui-sans-serif, system-ui, sans-serif;
+  opacity: 1;
+  padding: 0.1rem 0;
+}
+.about summary:hover,
+.about.help[open] summary { background: transparent; color: #fff; }
+.about .help-pop { left: auto; right: 0; }
+.about .help-pop::before { left: auto; right: 0.55rem; }
+.help-pop a { color: var(--gold); font-weight: 650; }
 .skyline { height: 6px; background: linear-gradient(90deg, var(--gold), var(--orange), var(--sky)); }
 main { max-width: 42rem; margin: 0 auto; padding: 1.75rem 1.15rem 4rem; }
 h1 { font-size: 1.85rem; letter-spacing: -0.03em; margin: 0 0 0.4rem; color: var(--orange); }
@@ -104,13 +125,17 @@ a.btn, button.btn { display: inline-flex; align-items: center; gap: 0.3rem; text
 .brand-icon { width: 0.95em; height: 0.95em; flex: none; display: block; }
 .sport { font-size: 1.15em; line-height: 1; }
 .row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.85rem 0 0.2rem; }
-.meta { color: var(--navy); font-size: 0.92rem; margin: 0; opacity: 0.85; }
+.meta { color: var(--navy); font-size: 0.92rem; margin: 0; opacity: 0.85; white-space: nowrap; text-decoration: none; }
+a.meta:hover { opacity: 1; text-decoration: underline; }
 ol { list-style: none; padding: 0; margin: 1rem 0 0; }
 li { padding: 0.75rem 0; border-top: 1px solid var(--line); color: var(--navy); }
 .when { display: block; font-size: 0.82rem; color: var(--orange); font-weight: 650; margin-bottom: 0.15rem; }
+.when a { color: inherit; text-decoration: none; }
+.when a:hover { text-decoration: underline; }
 input { width: 100%; margin-top: 0.35rem; padding: 0.55rem 0.65rem; border-radius: 0.5rem; border: 1px solid var(--line); font: inherit; color: var(--navy); background: #fff; }
+.team-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .team h2 a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.45rem; }
-.team h2 { font-size: 1.05rem; margin: 0 0 0.2rem; }
+.team h2 { font-size: 1.05rem; margin: 0; min-width: 0; }
 h1.team-title, h2.with-sport { display: flex; align-items: center; gap: 0.45rem; }
 .hint { font-size: 0.88rem; color: var(--navy); }
 .hint a { color: var(--orange); font-weight: 650; }
@@ -163,6 +188,8 @@ h1.team-title, h2.with-sport { display: flex; align-items: center; gap: 0.45rem;
 }
 `
 
+const SOURCE_REPO_URL = "https://github.com/jkrauska/baygames";
+
 function layout(title: string, siteName: string, body: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -175,8 +202,14 @@ function layout(title: string, siteName: string, body: string): string {
 <body>
   <header class="masthead">
     <div class="masthead-inner">
-      <a class="brand" href="/">${escapeHtml(siteName)}</a>
-      <p class="tag">Unofficial games calendar</p>
+      <div>
+        <a class="brand" href="/">${escapeHtml(siteName)}</a>
+        <p class="tag">Unofficial games calendar</p>
+      </div>
+      <details class="help about">
+        <summary>About</summary>
+        <p class="help-pop">Unofficial games-only calendar. Source and setup on <a href="${SOURCE_REPO_URL}">GitHub</a>.</p>
+      </details>
     </div>
   </header>
   <div class="skyline"></div>
@@ -214,8 +247,10 @@ export function renderHome(opts: {
   const teams = opts.teams
     .map(
       (team) => `<article class="card team">
-      <h2><a href="${escapeHtml(team.href)}">${titledName(team.name)}</a></h2>
-      <p class="meta">${team.games} game${team.games === 1 ? "" : "s"}</p>
+      <div class="team-head">
+        <h2><a href="${escapeHtml(team.href)}">${titledName(team.name)}</a></h2>
+        <a class="meta" href="${escapeHtml(team.href)}">${team.games} game${team.games === 1 ? "" : "s"}</a>
+      </div>
       ${calendarButtons(team)}
     </article>`,
     )
@@ -241,12 +276,15 @@ export function renderTeam(opts: {
   games: UpcomingGameView[];
 }): string {
   const upcoming = opts.games
-    .map(
-      (game) => `<li>
-        <span class="when">${escapeHtml(game.when)}${game.location ? ` · ${escapeHtml(game.location)}` : ""}</span>
+    .map((game) => {
+      const place = game.location
+        ? ` · <a href="${escapeHtml(mapsSearchUrl(game.location))}" target="_blank" rel="noopener noreferrer">${escapeHtml(game.location)}</a>`
+        : "";
+      return `<li>
+        <span class="when">${escapeHtml(game.when)}${place}</span>
         <span>${escapeHtml(game.summary)}</span>
-      </li>`,
-    )
+      </li>`;
+    })
     .join("");
 
   return layout(
@@ -254,7 +292,6 @@ export function renderTeam(opts: {
     opts.siteName,
     `<p class="hint"><a href="/">All Sports</a></p>
     <h1 class="team-title">${titledName(opts.teamName)}</h1>
-    <p class="lede">Games only — no practices or bonding events.</p>
     <section class="card">
       ${subscribeBlock(opts.links)}
     </section>

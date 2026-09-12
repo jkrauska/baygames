@@ -1,4 +1,6 @@
 import {
+  DEFAULT_CALENDAR_NAME,
+  displayGameSummary,
   filterGames,
   listGameTeams,
   listUpcomingGames,
@@ -9,14 +11,15 @@ import { renderHome, renderTeam, subscribeLinks } from "./page";
 
 export interface Env {
   SOURCE_ICAL_URL: string;
-  CALENDAR_NAME: string;
+  CALENDAR_NAME?: string;
   FEED_TOKEN?: string;
 }
 
 const CACHE_TTL_SECONDS = 300;
 const USER_AGENT = "Mozilla/5.0 (compatible; GamesCal/1.0)";
 const UPSTREAM_CACHE_KEY = "https://internal/upstream.ics?v=2";
-const FEED_CACHE_VERSION = "2";
+const FEED_CACHE_VERSION = "3";
+const PUBLIC_FEED_VERSION = 1;
 
 class ConfigError extends Error {}
 class UpstreamError extends Error {}
@@ -60,6 +63,10 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
+function calendarName(env: Env): string {
+  return env.CALENDAR_NAME?.trim() || DEFAULT_CALENDAR_NAME;
+}
+
 function tokenAllowed(url: URL, env: Env): boolean {
   if (!env.FEED_TOKEN) return true;
   return url.searchParams.get("token") === env.FEED_TOKEN;
@@ -82,8 +89,9 @@ function publicOrigin(url: URL): string {
 
 function feedUrl(url: URL, team?: string): string {
   const origin = publicOrigin(url);
-  if (!team) return `${origin}/games.ics`;
-  return `${origin}/${slugify(team)}.ics`;
+  const prefix = `${origin}/v${PUBLIC_FEED_VERSION}`;
+  if (!team) return `${prefix}/games.ics`;
+  return `${prefix}/${slugify(team)}.ics`;
 }
 
 async function cachedCalendar(
@@ -160,7 +168,7 @@ async function buildFeed(env: Env, ctx: ExecutionContext, team?: string): Promis
 
   let result;
   try {
-    const siteName = env.CALENDAR_NAME || "Bay Sports Games";
+    const siteName = calendarName(env);
     result = filterGames(body, {
       team,
       calendarName: team ? undefined : siteName,
@@ -192,7 +200,7 @@ async function landing(
   team?: string,
 ): Promise<Response> {
   const url = new URL(request.url);
-  const siteName = env.CALENDAR_NAME || "Bay Sports Games";
+  const siteName = calendarName(env);
 
   let ics: string;
   try {
@@ -216,14 +224,17 @@ async function landing(
     const html = renderTeam({
       siteName,
       teamName,
-      links: subscribeLinks(`${origin}/${slug}.ics`),
-      games: listUpcomingGames(filtered.ics),
+      links: subscribeLinks(feedUrl(url, slug)),
+      games: listUpcomingGames(filtered.ics).map((game) => ({
+        ...game,
+        summary: displayGameSummary(game.summary, teamName),
+      })),
     });
     return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
 
   const teams = listGameTeams(ics).map((item) => {
-    const links = subscribeLinks(`${origin}/${item.slug}.ics`);
+    const links = subscribeLinks(feedUrl(url, item.slug));
     return {
       name: item.name,
       slug: item.slug,
@@ -236,7 +247,7 @@ async function landing(
 
   const html = renderHome({
     siteName,
-    allGames: subscribeLinks(`${origin}/games.ics`),
+    allGames: subscribeLinks(feedUrl(url)),
     teams,
   });
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });

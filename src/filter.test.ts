@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   compareTeamNames,
+  DEFAULT_CALENDAR_NAME,
+  displayGameSummary,
   extractTeam,
   filterGames,
   isGameSummary,
@@ -25,12 +27,17 @@ BEGIN:VEVENT
 UID:game-1
 SUMMARY:Boys Varsity Flag Football - Game SF University High School - Away
 DTSTART;TZID=America/Los_Angeles:20260908T153000
-URL:https://example.invalid/secret-feed?z=token
+DESCRIPTION:Bring water. Meet at the field.
+LOCATION:Paul Goode - Field A/B
+STATUS:CONFIRMED
+CLASS:PUBLIC
+URL:https://example.myschoolapp.com/podium/feed/iCal.ashx?z=token
 END:VEVENT
 BEGIN:VEVENT
 UID:soccer
 SUMMARY:Boys Varsity Soccer - Game Drew School SF - Home
 DTSTART;TZID=America/Los_Angeles:20260915T160000
+URL:https://maps.google.com/?q=Kezar+Stadium
 END:VEVENT
 BEGIN:VEVENT
 UID:bonding
@@ -60,6 +67,12 @@ describe("team matching", () => {
     expect(extractTeam("Boys Varsity Flag Football - Game Drew School SF - Home")).toBe(
       "Boys Varsity Flag Football",
     );
+    expect(displayGameSummary(
+      "Boys Varsity Flag Football - Game The Nueva School - Home",
+      "Boys Varsity Flag Football",
+    )).toBe("The Nueva School - Home");
+    expect(displayGameSummary("Cross Country - Game - Neutral", "Cross Country")).toBe("Neutral");
+    expect(displayGameSummary("vs Drew School", "Boys Varsity Soccer")).toBe("vs Drew School");
   });
 
   it("parses path and ?team=", () => {
@@ -69,7 +82,11 @@ describe("team matching", () => {
     expect(parseTeamRequest("/boys-varsity-flag-football.ics", new URLSearchParams())).toBe(
       "boys-varsity-flag-football",
     );
+    expect(parseTeamRequest("/v1/boys-varsity-flag-football.ics", new URLSearchParams())).toBe(
+      "boys-varsity-flag-football",
+    );
     expect(parseTeamRequest("/games.ics", new URLSearchParams())).toBeUndefined();
+    expect(parseTeamRequest("/v1/games.ics", new URLSearchParams())).toBeUndefined();
     expect(parseTeamRequest("/", new URLSearchParams("team=Boys+Varsity+Soccer"))).toBe(
       "Boys Varsity Soccer",
     );
@@ -77,16 +94,26 @@ describe("team matching", () => {
 });
 
 describe("filterGames", () => {
-  it("keeps games only and strips URL properties", () => {
-    const { ics, stats } = filterGames(SAMPLE, "Bay Sports Games");
+  it("keeps games only and passes event fields through", () => {
+    const { ics, stats } = filterGames(SAMPLE, "Example Athletics");
     const unfolded = unfoldIcal(ics);
 
     expect(stats).toEqual({ kept: 2, dropped: 2 });
-    expect(unfolded).toContain("X-WR-CALNAME:Bay Sports Games");
+    expect(unfolded).toContain("X-WR-CALNAME:Example Athletics");
     expect(unfolded).toContain("- Game SF University High School - Away");
+    expect(unfolded).toContain("DESCRIPTION:Bring water. Meet at the field.");
+    expect(unfolded).toContain("LOCATION:Paul Goode - Field A/B");
+    expect(unfolded).toContain("STATUS:CONFIRMED");
+    expect(unfolded).toContain("CLASS:PUBLIC");
+    expect(unfolded).toContain("URL:https://maps.google.com/?q=Kezar+Stadium");
     expect(unfolded).not.toMatch(/Practice/);
     expect(unfolded).not.toMatch(/Bonding/);
-    expect(unfolded).not.toMatch(/example\.invalid/);
+    expect(unfolded).not.toMatch(/myschoolapp\.com/);
+  });
+
+  it("uses the default calendar name when none is provided", () => {
+    const unfolded = unfoldIcal(filterGames(SAMPLE).ics);
+    expect(unfolded).toContain(`X-WR-CALNAME:${DEFAULT_CALENDAR_NAME}`);
   });
 
   it("fills in a 2-hour DTEND when the school feed copies start into end", () => {
@@ -100,6 +127,21 @@ END:VEVENT
 END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTSTART;TZID=America/Los_Angeles:20260915T160000");
+    expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T180000");
+    expect(unfolded).toContain("SEQUENCE:1");
+    expect(unfolded).toContain("LAST-MODIFIED:20260912T000100Z");
+    expect(unfolded).toContain("DTSTAMP:20260912T000100Z");
+  });
+
+  it("adds a 2-hour DTEND when the school feed omits it", () => {
+    const ics = `BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:missing
+SUMMARY:Boys Varsity Flag Football - Game The Nueva School - Home
+DTSTART;TZID=America/Los_Angeles:20260915T160000
+END:VEVENT
+END:VCALENDAR`;
+    const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T180000");
   });
 
@@ -121,6 +163,7 @@ END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260829T123000");
     expect(unfolded).toContain("DTEND;VALUE=DATE:20261015");
+    expect(unfolded).toContain("SEQUENCE:1");
   });
 
   it("filters to one team by pretty name or slug", () => {

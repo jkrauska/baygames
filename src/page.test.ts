@@ -11,6 +11,27 @@ describe("sportGlyph", () => {
     expect(sportGlyph("Cross Country")).toBe("🏃");
   });
 
+  it("covers winter sports from last year", () => {
+    expect(sportGlyph("Boys Varsity Basketball")).toBe("🏀");
+    expect(sportGlyph("Boys JV Basketball")).toBe("🏀");
+    expect(sportGlyph("Boys Intramural Basketball")).toBe("🏀");
+    expect(sportGlyph("Girls Varsity Basketball")).toBe("🏀");
+    expect(sportGlyph("Girls Soccer")).toBe("⚽");
+  });
+
+  it("covers spring sports from last year", () => {
+    expect(sportGlyph("Baseball")).toBe("⚾");
+    expect(sportGlyph("Boys Varsity Baseball")).toBe("⚾");
+    expect(sportGlyph("Boys Golf")).toBe("⛳");
+    expect(sportGlyph("Boys Varsity Lacrosse")).toBe("🥍");
+    expect(sportGlyph("Boys JV Lacrosse")).toBe("🥍");
+    expect(sportGlyph("Girls Varsity Lacrosse")).toBe("🥍");
+    expect(sportGlyph("Boys Tennis")).toBe("🎾");
+    expect(sportGlyph("Boys Varsity Volleyball")).toBe("🏐");
+    expect(sportGlyph("Track and Field")).toBe("🏃");
+    expect(sportGlyph("Softball")).toBe("🥎");
+  });
+
   it("falls back for unknown teams", () => {
     expect(sportGlyph("Chess Club")).toBe("🏅");
   });
@@ -19,7 +40,7 @@ describe("sportGlyph", () => {
 describe("renderHome", () => {
   it("labels the combined feed All Sports and includes calendar brand icons", () => {
     const html = renderHome({
-      siteName: "Bay Sports Games",
+      siteName: "Example Athletics",
       allGames: subscribeLinks("https://example.test/games.ics"),
       teams: [
         {
@@ -38,9 +59,12 @@ describe("renderHome", () => {
     expect(html).toContain("class=\"brand-icon\"");
     expect(html).toContain("Google Calendar");
     expect(html).toContain("Apple Calendar");
+    expect(html).toContain('<a class="meta" href="/boys-varsity-soccer">3 games</a>');
     expect(html).toContain("webcal://example.test/boys-varsity-soccer.ics");
-    expect(html).toContain("Click a team to see upcoming games details.");
-    expect(html).not.toMatch(/<h1>[^<]*Bay Sports Games/);
+    expect(html).toContain('<a class="brand" href="/">Example Athletics</a>');
+    expect(html).toContain(">About</summary>");
+    expect(html).toContain('href="https://github.com/jkrauska/baygames"');
+    expect(html).not.toContain("&lt;p");
     expect(html).toContain("Not an official school site.");
   });
 });
@@ -48,14 +72,19 @@ describe("renderHome", () => {
 describe("renderTeam", () => {
   it("labels the list Upcoming Games", () => {
     const html = renderTeam({
-      siteName: "Bay Sports Games",
+      siteName: "Example Athletics",
       teamName: "Boys Varsity Soccer",
       links: subscribeLinks("https://example.test/boys-varsity-soccer.ics"),
-      games: [{ summary: "vs Drew School", when: "Tue, Sep 15 · 4:00 PM", location: "Home" }],
+      games: [{ summary: "Drew School SF - Home", when: "Tue, Sep 15 · 4:00–6:00 PM", location: "Kezar Stadium" }],
     });
     expect(html).toContain("<h2>Upcoming Games</h2>");
-    expect(html).toContain("vs Drew School");
+    expect(html).toContain("Drew School SF - Home");
+    expect(html).not.toContain("Boys Varsity Soccer - Game");
+    expect(html).toContain('href="https://maps.google.com/maps?q=Kezar%20Stadium"');
+    expect(html).toContain("Kezar Stadium");
     expect(html).toContain("All Sports");
+    expect(html).toContain(">About</summary>");
+    expect(html).toContain('href="https://github.com/jkrauska/baygames"');
     expect(html).toContain("Not an official school site.");
   });
 });

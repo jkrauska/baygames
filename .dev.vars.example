@@ -1,3 +1,7 @@
-# Copy to .dev.vars (gitignored). Do not commit the real feed URL.
+# Copy to .dev.vars (gitignored). See README “Use it for your school”.
 # Production: npx wrangler secret put SOURCE_ICAL_URL
+#
+# Blackbaud: Calendar → Individual Filter Feeds → Athletics → copy iCal link.
+# If the link is webcal://…, change it to https:// before pasting.
 SOURCE_ICAL_URL=
+CALENDAR_NAME=Sports Games

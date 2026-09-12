@@ -14,6 +14,8 @@ export type FilterOptions = {
   team?: string;
 };
 
+export const DEFAULT_CALENDAR_NAME = "Sports Games";
+
 export type FilterResult = {
   ics: string;
   stats: FilterStats;
@@ -131,6 +133,16 @@ export function teamMatches(summary: string, requested: string): boolean {
   return slugify(team) === slugify(wanted) || team.toLowerCase() === wanted.toLowerCase();
 }
 
+/** Team page already names the team; keep opponent / home-away from the school SUMMARY. */
+export function displayGameSummary(summary: string, teamName: string): string {
+  const text = normalizeName(summary);
+  const team = normalizeName(teamName);
+  if (!text || !team) return text;
+  const escaped = team.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const rest = normalizeName(text.replace(new RegExp(`^${escaped}\\s+-\\s+Game\\b\\s*`, "i"), "").replace(/^-\s+/, ""));
+  return rest || text;
+}
+
 export function parseTeamRequest(pathname: string, searchParams: URLSearchParams): string | undefined {
   const query = searchParams.get("team") ?? searchParams.get("q");
   if (query) {
@@ -142,6 +154,7 @@ export function parseTeamRequest(pathname: string, searchParams: URLSearchParams
   if (trimmed === "" || trimmed === "/") return undefined;
   let rest = decodeURIComponent(trimmed.slice(1).replace(/\+/g, " "));
   if (rest.toLowerCase().endsWith(".ics")) rest = rest.slice(0, -4);
+  rest = rest.replace(/^v\d+(?:\/|$)/i, "");
   rest = normalizeName(rest);
   if (!rest || RESERVED_PATHS.has(rest.toLowerCase())) return undefined;
   return rest;
@@ -211,14 +224,25 @@ function splitEvents(unfolded: string): { prelude: string[]; events: string[] } 
 
 function withCalendarName(prelude: string[], name: string): string[] {
   const withoutName = prelude.filter(
-    (line) => !/^X-WR-CALNAME(?:;[^:]*)?:/i.test(line) && !/^NAME(?:;[^:]*)?:/i.test(line),
+    (line) =>
+      !/^X-WR-CALNAME(?:;[^:]*)?:/i.test(line) &&
+      !/^NAME(?:;[^:]*)?:/i.test(line) &&
+      !/^REFRESH-INTERVAL(?:;[^:]*)?:/i.test(line) &&
+      !/^X-PUBLISHED-TTL(?:;[^:]*)?:/i.test(line),
   );
   const insertAt = Math.max(
     1,
     withoutName.findIndex((line) => /^PRODID(?:;[^:]*)?:/i.test(line)) + 1,
   );
   const next = [...withoutName];
-  next.splice(insertAt, 0, `X-WR-CALNAME:${name}`, `NAME:${name}`);
+  next.splice(
+    insertAt,
+    0,
+    `X-WR-CALNAME:${name}`,
+    `NAME:${name}`,
+    "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
+    "X-PUBLISHED-TTL:PT1H",
+  );
   return next;
 }
 
@@ -251,21 +275,74 @@ function addMinutesToIcalDateTime(value: string, minutes: number): string {
   return `${next.getUTCFullYear()}${pad(next.getUTCMonth() + 1)}${pad(next.getUTCDate())}T${pad(next.getUTCHours())}${pad(next.getUTCMinutes())}${pad(next.getUTCSeconds())}`;
 }
 
+/** Google keeps the first subscribed copy unless SEQUENCE increases and DTSTAMP moves forward. */
+const EVENT_REVISION = 1;
+const EVENT_REVISION_STAMP = "20260912T000100Z";
+
+function stampNumber(value: string): number {
+  return Number(value.replace(/[^\d]/g, "").padEnd(14, "0"));
+}
+
+function upsertProperty(event: string, name: string, value: string): string {
+  const line = `${name}:${value}`;
+  const re = new RegExp(`^${name}(?:;[^:]*)?:.*$`, "im");
+  if (re.test(event)) return event.replace(re, line);
+  const anchor = event.match(/^DTSTART(?:;[^:]*)?:.*$/im)?.[0];
+  if (anchor) return event.replace(anchor, `${anchor}\n${line}`);
+  return `${event}\n${line}`;
+}
+
+function markRevised(event: string): string {
+  const current = Number(getProperty(event, "SEQUENCE") ?? "0");
+  const sequence = Number.isFinite(current) ? Math.max(current, EVENT_REVISION) : EVENT_REVISION;
+  let next = upsertProperty(event, "SEQUENCE", String(sequence));
+  next = upsertProperty(next, "LAST-MODIFIED", EVENT_REVISION_STAMP);
+  const stamp = getProperty(event, "DTSTAMP");
+  if (!stamp || stampNumber(stamp) < stampNumber(EVENT_REVISION_STAMP)) {
+    next = upsertProperty(next, "DTSTAMP", EVENT_REVISION_STAMP);
+  }
+  return next;
+}
+
 /** School feed often copies DTEND from DTSTART. Keep a 2-hour window so calendar apps show a real game. */
 export function ensureGameDuration(event: string, minutes = 120): string {
   const startLine = event.match(/^DTSTART(?:;[^:]*)?:.*$/im)?.[0];
-  const endLine = event.match(/^DTEND(?:;[^:]*)?:.*$/im)?.[0];
-  if (!startLine || !endLine) return event;
+  if (!startLine) return markRevised(event);
   const startValue = icalLineValue(startLine);
-  const endValue = icalLineValue(endLine);
-  if (!startValue.includes("T") || startValue !== endValue) return event;
-  return event.replace(endLine, `${endLine.slice(0, endLine.length - endValue.length)}${addMinutesToIcalDateTime(startValue, minutes)}`);
+  if (!startValue.includes("T")) return markRevised(event);
+
+  const endLine = event.match(/^DTEND(?:;[^:]*)?:.*$/im)?.[0];
+  const endValue = endLine ? icalLineValue(endLine) : "";
+  if (endLine && startValue !== endValue) return markRevised(event);
+
+  const newEndValue = addMinutesToIcalDateTime(startValue, minutes);
+  const newEndLine = endLine
+    ? `${endLine.slice(0, endLine.length - endValue.length)}${newEndValue}`
+    : startLine.replace(/^DTSTART/i, "DTEND").replace(startValue, newEndValue);
+  const withEnd = endLine ? event.replace(endLine, newEndLine) : event.replace(startLine, `${startLine}\n${newEndLine}`);
+  return markRevised(withEnd);
 }
 
+function isPrivateCalendarUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value.trim());
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+    return host.includes("myschoolapp.com") || path.includes("ical.ashx") || path.includes("/podium/feed");
+  } catch {
+    return false;
+  }
+}
+
+/** Drop only private school-feed links. Every other event property is passed through. */
 function sanitizeEvent(event: string): string {
   return event
     .split("\n")
-    .filter((line) => !/^URL(?:;[^:]*)?:/i.test(line))
+    .filter((line) => {
+      const match = line.match(/^URL(?:;[^:]*)?:(.*)$/i);
+      if (!match) return true;
+      return !isPrivateCalendarUrl(icalUnescape(match[1]));
+    })
     .join("\n");
 }
 
@@ -346,7 +423,7 @@ export function filterGames(ics: string, calendarNameOrOptions: string | FilterO
   const teamName = requested
     ? extractTeam(getProperty(keptEvents[0] ?? "", "SUMMARY") ?? "") ?? normalizeName(requested)
     : undefined;
-  const calendarName = options.calendarName || teamName || "Bay Sports Games";
+  const calendarName = options.calendarName || teamName || DEFAULT_CALENDAR_NAME;
   const lines = [
     ...withCalendarName(prelude, calendarName),
     ...keptEvents.flatMap((event) => sanitizeEvent(ensureGameDuration(event)).split("\n")),
