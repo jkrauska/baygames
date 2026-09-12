@@ -32,6 +32,7 @@ export type UpcomingGame = {
   summary: string;
   location?: string;
   when: string;
+  until?: string;
   sortKey: string;
   endGuessed?: boolean;
 };
@@ -381,12 +382,13 @@ function toUpcomingGame(event: string): UpcomingGame | undefined {
   const start = getProperty(event, "DTSTART");
   if (!summary || !start) return undefined;
   const end = getProperty(event, "DTEND");
-  const { when, sortKey } = formatWhen(start, end);
+  const { when, until, sortKey } = formatWhen(start, end);
   const description = getProperty(event, "DESCRIPTION");
   return {
     summary,
     location: getProperty(event, "LOCATION"),
     when,
+    until,
     sortKey,
     endGuessed: description?.includes(END_TIME_GUESS_NOTE) || undefined,
   };
@@ -400,7 +402,7 @@ function formatClock(digits: string): string {
   return `${hour12}:${String(minute).padStart(2, "0")} ${ampm}`;
 }
 
-function formatWhen(start: string, end?: string): { when: string; sortKey: string } {
+function formatWhen(start: string, end?: string): { when: string; until?: string; sortKey: string } {
   const digits = start.replace(/[^\d]/g, "");
   if (digits.length < 8) return { when: start, sortKey: digits.padEnd(8, "0") };
   const year = Number(digits.slice(0, 4));
@@ -423,7 +425,8 @@ function formatWhen(start: string, end?: string): { when: string; sortKey: strin
     const sameMeridiem = startClock.slice(-2) === endClock.slice(-2);
     const startPart = sameMeridiem ? startClock.slice(0, -3) : startClock;
     return {
-      when: `${dateLabel} · ${startPart}–${endClock}`,
+      when: `${dateLabel} · ${startPart}`,
+      until: endClock,
       sortKey: digits.padEnd(14, "0"),
     };
   }
