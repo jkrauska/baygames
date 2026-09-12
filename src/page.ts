@@ -123,6 +123,8 @@ h1.team-title, h2.with-sport { display: flex; align-items: center; gap: 0.45rem;
 .hint { font-size: 0.88rem; color: var(--navy); }
 .hint a { color: var(--orange); font-weight: 650; }
 .unofficial { margin: 1.5rem 0 0; font-size: 0.8rem; color: var(--navy); opacity: 0.75; display: flex; align-items: center; gap: 0.7rem; }
+.unofficial a { color: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 0.12em; }
+.unofficial a:hover { color: var(--orange); }
 .feed { margin: 0.85rem 0 0; }
 .feed-heading { display: flex; align-items: center; gap: 0.4rem; font-size: 0.92rem; }
 .help { position: relative; display: inline-flex; }
@@ -169,28 +171,9 @@ h1.team-title, h2.with-sport { display: flex; align-items: center; gap: 0.45rem;
   border-bottom-color: var(--navy-deep);
   border-top-width: 0;
 }
-.about summary {
-  width: auto;
-  height: auto;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: 650;
-  opacity: 1;
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 0.12em;
-}
-.about summary:hover,
-.about.help[open] summary { background: transparent; color: var(--orange); }
-.about .help-pop { top: auto; bottom: calc(100% + 0.45rem); }
-.about .help-pop::before { top: auto; bottom: -6px; border-bottom-color: transparent; border-top-color: var(--navy-deep); border-top-width: 6px; border-bottom-width: 0; }
-.help-pop a { color: var(--gold); font-weight: 650; }
 `
 
-const SOURCE_REPO_URL = "https://github.com/jkrauska/baygames";
+const SOURCE_REPO_URL = "https://github.com/jkrauska/baygames#readme";
 
 function layout(title: string, siteName: string, body: string): string {
   return `<!DOCTYPE html>
@@ -238,10 +221,7 @@ function subscribeBlock(links: SubscribeLinks): string {
 function unofficialNote(): string {
   return `<div class="unofficial">
     <span>Not an official school site.</span>
-    <details class="help about">
-      <summary>About</summary>
-      <p class="help-pop">Unofficial games-only calendar. Source and setup on <a href="${SOURCE_REPO_URL}">GitHub</a>.</p>
-    </details>
+    <a class="about" href="${SOURCE_REPO_URL}">About</a>
   </div>`;
 }
 
