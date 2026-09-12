@@ -1,6 +1,8 @@
 # baygames
 
-A Cloudflare Worker that proxies a school athletics iCal feed and republishes calendars that **only contain games** — no practices, photos, or bonding events.
+The default school athletics calendar includes **every sport and every practice** — hundreds of events most people don't want. This Worker proxies that feed and republishes per-team calendars that **only contain games**, with a one-click "Add to Google Calendar" / "Add to Apple Calendar" for each team.
+
+That makes it easy to share just the games with extended family (grandparents, aunts, uncles) who want to know when to show up, but don't need every practice on their calendar.
 
 Families subscribe to this Worker. The school’s original feed URL stays on the server.
 
