@@ -287,8 +287,8 @@ function addMinutesToIcalDateTime(value: string, minutes: number): string {
 
 /** Google keeps the first subscribed copy unless SEQUENCE increases and DTSTAMP moves forward.
  *  Floor only — if the school feed later sends a higher SEQUENCE, we keep theirs. */
-const EVENT_REVISION = 3;
-const EVENT_REVISION_STAMP = "20260912T011800Z";
+const EVENT_REVISION = 4;
+const EVENT_REVISION_STAMP = "20260912T013600Z";
 
 function stampNumber(value: string): number {
   return Number(value.replace(/[^\d]/g, "").padEnd(14, "0"));
@@ -315,8 +315,8 @@ function markRevised(event: string): string {
   return next;
 }
 
-/** School feed often copies DTEND from DTSTART. Guess 90 minutes so calendar apps show a real game. */
-export const DEFAULT_GAME_MINUTES = 90;
+/** School feed often copies DTEND from DTSTART. Guess 60 minutes so calendar apps show a real game. */
+export const DEFAULT_GAME_MINUTES = 60;
 export const END_TIME_GUESS_NOTE = "End time is a guess.";
 
 function appendGuessNote(event: string): string {

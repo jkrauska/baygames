@@ -116,7 +116,7 @@ describe("filterGames", () => {
     expect(unfolded).toContain(`X-WR-CALNAME:${DEFAULT_CALENDAR_NAME}`);
   });
 
-  it("fills in a 90-minute DTEND when the school feed copies start into end", () => {
+  it("fills in a 60-minute DTEND when the school feed copies start into end", () => {
     const ics = `BEGIN:VCALENDAR
 BEGIN:VEVENT
 UID:zero
@@ -127,14 +127,14 @@ END:VEVENT
 END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTSTART;TZID=America/Los_Angeles:20260915T160000");
-    expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T173000");
-    expect(unfolded).toContain("SEQUENCE:3");
-    expect(unfolded).toContain("LAST-MODIFIED:20260912T011800Z");
-    expect(unfolded).toContain("DTSTAMP:20260912T011800Z");
+    expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T170000");
+    expect(unfolded).toContain("SEQUENCE:4");
+    expect(unfolded).toContain("LAST-MODIFIED:20260912T013600Z");
+    expect(unfolded).toContain("DTSTAMP:20260912T013600Z");
     expect(unfolded).toContain("DESCRIPTION:End time is a guess.");
   });
 
-  it("adds a 90-minute DTEND when the school feed omits it", () => {
+  it("adds a 60-minute DTEND when the school feed omits it", () => {
     const ics = `BEGIN:VCALENDAR
 BEGIN:VEVENT
 UID:missing
@@ -143,7 +143,7 @@ DTSTART;TZID=America/Los_Angeles:20260915T160000
 END:VEVENT
 END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
-    expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T173000");
+    expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T170000");
     expect(unfolded).toContain("DESCRIPTION:End time is a guess.");
   });
 
@@ -165,7 +165,7 @@ END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260829T123000");
     expect(unfolded).toContain("DTEND;VALUE=DATE:20261015");
-    expect(unfolded).toContain("SEQUENCE:3");
+    expect(unfolded).toContain("SEQUENCE:4");
     expect(unfolded).not.toContain("End time is a guess.");
   });
 
