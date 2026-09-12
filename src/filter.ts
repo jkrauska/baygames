@@ -275,9 +275,10 @@ function addMinutesToIcalDateTime(value: string, minutes: number): string {
   return `${next.getUTCFullYear()}${pad(next.getUTCMonth() + 1)}${pad(next.getUTCDate())}T${pad(next.getUTCHours())}${pad(next.getUTCMinutes())}${pad(next.getUTCSeconds())}`;
 }
 
-/** Google keeps the first subscribed copy unless SEQUENCE increases and DTSTAMP moves forward. */
-const EVENT_REVISION = 1;
-const EVENT_REVISION_STAMP = "20260912T000100Z";
+/** Google keeps the first subscribed copy unless SEQUENCE increases and DTSTAMP moves forward.
+ *  Floor only — if the school feed later sends a higher SEQUENCE, we keep theirs. */
+const EVENT_REVISION = 2;
+const EVENT_REVISION_STAMP = "20260912T011500Z";
 
 function stampNumber(value: string): number {
   return Number(value.replace(/[^\d]/g, "").padEnd(14, "0"));
@@ -304,8 +305,10 @@ function markRevised(event: string): string {
   return next;
 }
 
-/** School feed often copies DTEND from DTSTART. Keep a 2-hour window so calendar apps show a real game. */
-export function ensureGameDuration(event: string, minutes = 120): string {
+/** School feed often copies DTEND from DTSTART. Guess 90 minutes so calendar apps show a real game. */
+export const DEFAULT_GAME_MINUTES = 90;
+
+export function ensureGameDuration(event: string, minutes = DEFAULT_GAME_MINUTES): string {
   const startLine = event.match(/^DTSTART(?:;[^:]*)?:.*$/im)?.[0];
   if (!startLine) return markRevised(event);
   const startValue = icalLineValue(startLine);

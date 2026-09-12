@@ -102,6 +102,8 @@ An event is kept when it is a game (` - Game`, `vs`, playoff, championship) and 
 
 Optional `?team=` or the path selects one team from the all-sports feed.
 
+Blackbaud (and similar) feeds often omit `DTEND`, or copy `DTSTART` into `DTEND`, so calendar apps show a zero-length event. Timed games then get a **guessed 90-minute window** (`DTSTART` + 90 minutes). Real end times and all-day dates are left alone. The guess is only so Google/Apple Calendar show a block; it is not the school’s official game length.
+
 ## Routes
 
 | Path | Purpose |

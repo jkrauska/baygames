@@ -18,7 +18,7 @@ export interface Env {
 const CACHE_TTL_SECONDS = 300;
 const USER_AGENT = "Mozilla/5.0 (compatible; GamesCal/1.0)";
 const UPSTREAM_CACHE_KEY = "https://internal/upstream.ics?v=2";
-const FEED_CACHE_VERSION = "3";
+const FEED_CACHE_VERSION = "4";
 const PUBLIC_FEED_VERSION = 1;
 
 class ConfigError extends Error {}

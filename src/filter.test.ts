@@ -116,7 +116,7 @@ describe("filterGames", () => {
     expect(unfolded).toContain(`X-WR-CALNAME:${DEFAULT_CALENDAR_NAME}`);
   });
 
-  it("fills in a 2-hour DTEND when the school feed copies start into end", () => {
+  it("fills in a 90-minute DTEND when the school feed copies start into end", () => {
     const ics = `BEGIN:VCALENDAR
 BEGIN:VEVENT
 UID:zero
@@ -127,13 +127,13 @@ END:VEVENT
 END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTSTART;TZID=America/Los_Angeles:20260915T160000");
-    expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T180000");
-    expect(unfolded).toContain("SEQUENCE:1");
-    expect(unfolded).toContain("LAST-MODIFIED:20260912T000100Z");
-    expect(unfolded).toContain("DTSTAMP:20260912T000100Z");
+    expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T173000");
+    expect(unfolded).toContain("SEQUENCE:2");
+    expect(unfolded).toContain("LAST-MODIFIED:20260912T011500Z");
+    expect(unfolded).toContain("DTSTAMP:20260912T011500Z");
   });
 
-  it("adds a 2-hour DTEND when the school feed omits it", () => {
+  it("adds a 90-minute DTEND when the school feed omits it", () => {
     const ics = `BEGIN:VCALENDAR
 BEGIN:VEVENT
 UID:missing
@@ -142,7 +142,7 @@ DTSTART;TZID=America/Los_Angeles:20260915T160000
 END:VEVENT
 END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
-    expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T180000");
+    expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T173000");
   });
 
   it("leaves real end times and all-day dates alone", () => {
@@ -163,7 +163,7 @@ END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260829T123000");
     expect(unfolded).toContain("DTEND;VALUE=DATE:20261015");
-    expect(unfolded).toContain("SEQUENCE:1");
+    expect(unfolded).toContain("SEQUENCE:2");
   });
 
   it("filters to one team by pretty name or slug", () => {
