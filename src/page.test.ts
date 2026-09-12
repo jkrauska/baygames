@@ -88,9 +88,10 @@ describe("renderTeam", () => {
     expect(html).toContain("<h2>Upcoming Games</h2>");
     expect(html).toContain("Drew School SF - Home");
     expect(html).toContain("4:00~");
-    expect(html).toContain("5:30 PM(?)");
-    expect(html).toContain('title="End time is a guess."');
-    expect(html).not.toContain('<span class="guess">');
+    expect(html).toContain("5:30 PM");
+    expect(html).toContain('title="end time estimated"');
+    expect(html).toContain(">?</span>");
+    expect(html).not.toContain("5:30 PM(?)");
     expect(html).not.toContain("Boys Varsity Soccer - Game");
     expect(html).toContain('href="https://maps.google.com/maps?q=Kezar%20Stadium"');
     expect(html).toContain("Kezar Stadium");

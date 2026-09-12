@@ -1,5 +1,3 @@
-import { END_TIME_GUESS_NOTE } from "./filter";
-
 export function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -119,7 +117,7 @@ li { padding: 0.75rem 0; border-top: 1px solid var(--line); color: var(--navy); 
 .when { display: block; font-size: 0.82rem; color: var(--orange); font-weight: 650; margin-bottom: 0.15rem; }
 .when a { color: inherit; text-decoration: none; }
 .when a:hover { text-decoration: underline; }
-.guessed-end { border-bottom: 1px dotted currentColor; cursor: help; font-weight: 550; }
+.guessed-end { border-bottom: 1px dotted currentColor; cursor: help; }
 input { width: 100%; margin-top: 0.35rem; padding: 0.55rem 0.65rem; border-radius: 0.5rem; border: 1px solid var(--line); font: inherit; color: var(--navy); background: #fff; }
 .team-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .team h2 a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.45rem; }
@@ -233,7 +231,7 @@ function unofficialNote(): string {
 function formatGameWhen(game: Pick<UpcomingGameView, "when" | "until" | "endGuessed">): string {
   if (!game.until) return escapeHtml(game.when);
   if (game.endGuessed) {
-    return `${escapeHtml(game.when)}~<span class="guessed-end" title="${escapeHtml(END_TIME_GUESS_NOTE)}">${escapeHtml(game.until)}(?)</span>`;
+    return `${escapeHtml(game.when)}~${escapeHtml(game.until)}<span class="guessed-end" title="end time estimated">?</span>`;
   }
   return `${escapeHtml(game.when)}–${escapeHtml(game.until)}`;
 }
