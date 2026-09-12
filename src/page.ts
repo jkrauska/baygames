@@ -93,26 +93,9 @@ const STYLES = `
 * { box-sizing: border-box; }
 body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--navy); }
 .masthead { background: var(--navy-deep); }
-.masthead-inner { max-width: 42rem; margin: 0 auto; padding: 1.15rem 1.15rem 1.05rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.masthead-inner { max-width: 42rem; margin: 0 auto; padding: 1.15rem 1.15rem 1.05rem; }
 .brand { text-decoration: none; color: var(--gold); font-weight: 750; font-size: 1.15rem; letter-spacing: 0.04em; }
 .tag { margin: 0.25rem 0 0; color: var(--sky); font-size: 0.82rem; }
-.about { flex: none; margin-top: 0.15rem; }
-.about summary {
-  width: auto;
-  height: auto;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  color: var(--gold);
-  font: 650 0.82rem/1.2 ui-sans-serif, system-ui, sans-serif;
-  opacity: 1;
-  padding: 0.1rem 0;
-}
-.about summary:hover,
-.about.help[open] summary { background: transparent; color: #fff; }
-.about .help-pop { left: auto; right: 0; }
-.about .help-pop::before { left: auto; right: 0.55rem; }
-.help-pop a { color: var(--gold); font-weight: 650; }
 .skyline { height: 6px; background: linear-gradient(90deg, var(--gold), var(--orange), var(--sky)); }
 main { max-width: 42rem; margin: 0 auto; padding: 1.75rem 1.15rem 4rem; }
 h1 { font-size: 1.85rem; letter-spacing: -0.03em; margin: 0 0 0.4rem; color: var(--orange); }
@@ -139,7 +122,7 @@ input { width: 100%; margin-top: 0.35rem; padding: 0.55rem 0.65rem; border-radiu
 h1.team-title, h2.with-sport { display: flex; align-items: center; gap: 0.45rem; }
 .hint { font-size: 0.88rem; color: var(--navy); }
 .hint a { color: var(--orange); font-weight: 650; }
-.unofficial { margin: 1.5rem 0 0; font-size: 0.8rem; color: var(--navy); opacity: 0.75; }
+.unofficial { margin: 1.5rem 0 0; font-size: 0.8rem; color: var(--navy); opacity: 0.75; display: flex; align-items: center; gap: 0.7rem; }
 .feed { margin: 0.85rem 0 0; }
 .feed-heading { display: flex; align-items: center; gap: 0.4rem; font-size: 0.92rem; }
 .help { position: relative; display: inline-flex; }
@@ -186,6 +169,25 @@ h1.team-title, h2.with-sport { display: flex; align-items: center; gap: 0.45rem;
   border-bottom-color: var(--navy-deep);
   border-top-width: 0;
 }
+.about summary {
+  width: auto;
+  height: auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  opacity: 1;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+.about summary:hover,
+.about.help[open] summary { background: transparent; color: var(--orange); }
+.about .help-pop { top: auto; bottom: calc(100% + 0.45rem); }
+.about .help-pop::before { top: auto; bottom: -6px; border-bottom-color: transparent; border-top-color: var(--navy-deep); border-top-width: 6px; border-bottom-width: 0; }
+.help-pop a { color: var(--gold); font-weight: 650; }
 `
 
 const SOURCE_REPO_URL = "https://github.com/jkrauska/baygames";
@@ -202,14 +204,8 @@ function layout(title: string, siteName: string, body: string): string {
 <body>
   <header class="masthead">
     <div class="masthead-inner">
-      <div>
-        <a class="brand" href="/">${escapeHtml(siteName)}</a>
-        <p class="tag">Unofficial games calendar</p>
-      </div>
-      <details class="help about">
-        <summary>About</summary>
-        <p class="help-pop">Unofficial games-only calendar. Source and setup on <a href="${SOURCE_REPO_URL}">GitHub</a>.</p>
-      </details>
+      <a class="brand" href="/">${escapeHtml(siteName)}</a>
+      <p class="tag">Unofficial games calendar</p>
     </div>
   </header>
   <div class="skyline"></div>
@@ -239,6 +235,16 @@ function subscribeBlock(links: SubscribeLinks): string {
   </div>`;
 }
 
+function unofficialNote(): string {
+  return `<div class="unofficial">
+    <span>Not an official school site.</span>
+    <details class="help about">
+      <summary>About</summary>
+      <p class="help-pop">Unofficial games-only calendar. Source and setup on <a href="${SOURCE_REPO_URL}">GitHub</a>.</p>
+    </details>
+  </div>`;
+}
+
 export function renderHome(opts: {
   siteName: string;
   allGames: SubscribeLinks;
@@ -265,7 +271,7 @@ export function renderHome(opts: {
       ${subscribeBlock(opts.allGames)}
     </section>
     ${teams || `<p class="hint">No games found in the school feed right now.</p>`}
-    <p class="unofficial">Not an official school site.</p>`,
+    ${unofficialNote()}`,
   );
 }
 
@@ -297,6 +303,6 @@ export function renderTeam(opts: {
     </section>
     <h2>Upcoming Games</h2>
     <ol>${upcoming || `<li class="hint">No upcoming games on the school calendar.</li>`}</ol>
-    <p class="unofficial">Not an official school site.</p>`,
+    ${unofficialNote()}`,
   );
 }

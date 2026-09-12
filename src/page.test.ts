@@ -62,6 +62,7 @@ describe("renderHome", () => {
     expect(html).toContain('<a class="meta" href="/boys-varsity-soccer">3 games</a>');
     expect(html).toContain("webcal://example.test/boys-varsity-soccer.ics");
     expect(html).toContain('<a class="brand" href="/">Example Athletics</a>');
+    expect(html).toContain("class=\"unofficial\"");
     expect(html).toContain(">About</summary>");
     expect(html).toContain('href="https://github.com/jkrauska/baygames"');
     expect(html).not.toContain("&lt;p");
@@ -83,6 +84,7 @@ describe("renderTeam", () => {
     expect(html).toContain('href="https://maps.google.com/maps?q=Kezar%20Stadium"');
     expect(html).toContain("Kezar Stadium");
     expect(html).toContain("All Sports");
+    expect(html).toContain("class=\"unofficial\"");
     expect(html).toContain(">About</summary>");
     expect(html).toContain('href="https://github.com/jkrauska/baygames"');
     expect(html).toContain("Not an official school site.");
