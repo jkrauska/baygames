@@ -101,7 +101,7 @@ describe("filterGames", () => {
     expect(stats).toEqual({ kept: 2, dropped: 2 });
     expect(unfolded).toContain("X-WR-CALNAME:Example Athletics");
     expect(unfolded).toContain("- Game SF University High School - Away");
-    expect(unfolded).toContain("DESCRIPTION:Bring water. Meet at the field.");
+    expect(unfolded).toContain("DESCRIPTION:Bring water. Meet at the field.\\nEnd time is a guess.");
     expect(unfolded).toContain("LOCATION:Paul Goode - Field A/B");
     expect(unfolded).toContain("STATUS:CONFIRMED");
     expect(unfolded).toContain("CLASS:PUBLIC");
@@ -128,9 +128,10 @@ END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTSTART;TZID=America/Los_Angeles:20260915T160000");
     expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T173000");
-    expect(unfolded).toContain("SEQUENCE:2");
-    expect(unfolded).toContain("LAST-MODIFIED:20260912T011500Z");
-    expect(unfolded).toContain("DTSTAMP:20260912T011500Z");
+    expect(unfolded).toContain("SEQUENCE:3");
+    expect(unfolded).toContain("LAST-MODIFIED:20260912T011800Z");
+    expect(unfolded).toContain("DTSTAMP:20260912T011800Z");
+    expect(unfolded).toContain("DESCRIPTION:End time is a guess.");
   });
 
   it("adds a 90-minute DTEND when the school feed omits it", () => {
@@ -143,6 +144,7 @@ END:VEVENT
 END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260915T173000");
+    expect(unfolded).toContain("DESCRIPTION:End time is a guess.");
   });
 
   it("leaves real end times and all-day dates alone", () => {
@@ -163,7 +165,8 @@ END:VCALENDAR`;
     const unfolded = unfoldIcal(filterGames(ics).ics);
     expect(unfolded).toContain("DTEND;TZID=America/Los_Angeles:20260829T123000");
     expect(unfolded).toContain("DTEND;VALUE=DATE:20261015");
-    expect(unfolded).toContain("SEQUENCE:2");
+    expect(unfolded).toContain("SEQUENCE:3");
+    expect(unfolded).not.toContain("End time is a guess.");
   });
 
   it("filters to one team by pretty name or slug", () => {

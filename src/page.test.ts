@@ -77,10 +77,11 @@ describe("renderTeam", () => {
       siteName: "Example Athletics",
       teamName: "Boys Varsity Soccer",
       links: subscribeLinks("https://example.test/boys-varsity-soccer.ics"),
-      games: [{ summary: "Drew School SF - Home", when: "Tue, Sep 15 · 4:00–6:00 PM", location: "Kezar Stadium" }],
+      games: [{ summary: "Drew School SF - Home", when: "Tue, Sep 15 · 4:00–5:30 PM", location: "Kezar Stadium", endGuessed: true }],
     });
     expect(html).toContain("<h2>Upcoming Games</h2>");
     expect(html).toContain("Drew School SF - Home");
+    expect(html).toContain("End time is a guess.");
     expect(html).not.toContain("Boys Varsity Soccer - Game");
     expect(html).toContain('href="https://maps.google.com/maps?q=Kezar%20Stadium"');
     expect(html).toContain("Kezar Stadium");

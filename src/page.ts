@@ -1,3 +1,5 @@
+import { END_TIME_GUESS_NOTE } from "./filter";
+
 export function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -75,6 +77,7 @@ type UpcomingGameView = {
   summary: string;
   location?: string;
   when: string;
+  endGuessed?: boolean;
 };
 
 const STYLES = `
@@ -115,6 +118,7 @@ li { padding: 0.75rem 0; border-top: 1px solid var(--line); color: var(--navy); 
 .when { display: block; font-size: 0.82rem; color: var(--orange); font-weight: 650; margin-bottom: 0.15rem; }
 .when a { color: inherit; text-decoration: none; }
 .when a:hover { text-decoration: underline; }
+.guess { display: block; font-size: 0.75rem; font-weight: 500; color: var(--navy); opacity: 0.7; margin: 0.1rem 0 0.2rem; }
 input { width: 100%; margin-top: 0.35rem; padding: 0.55rem 0.65rem; border-radius: 0.5rem; border: 1px solid var(--line); font: inherit; color: var(--navy); background: #fff; }
 .team-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
 .team h2 a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.45rem; }
@@ -268,6 +272,7 @@ export function renderTeam(opts: {
         : "";
       return `<li>
         <span class="when">${escapeHtml(game.when)}${place}</span>
+        ${game.endGuessed ? `<span class="guess">${escapeHtml(END_TIME_GUESS_NOTE)}</span>` : ""}
         <span>${escapeHtml(game.summary)}</span>
       </li>`;
     })

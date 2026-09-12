@@ -33,6 +33,7 @@ export type UpcomingGame = {
   location?: string;
   when: string;
   sortKey: string;
+  endGuessed?: boolean;
 };
 
 const RESERVED_PATHS = new Set([
@@ -56,6 +57,14 @@ export function icalUnescape(value: string): string {
     .replace(/\\,/g, ",")
     .replace(/\\;/g, ";")
     .replace(/\\\\/g, "\\");
+}
+
+export function icalEscape(value: string): string {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,");
 }
 
 export function getProperty(block: string, name: string): string | undefined {
@@ -277,8 +286,8 @@ function addMinutesToIcalDateTime(value: string, minutes: number): string {
 
 /** Google keeps the first subscribed copy unless SEQUENCE increases and DTSTAMP moves forward.
  *  Floor only — if the school feed later sends a higher SEQUENCE, we keep theirs. */
-const EVENT_REVISION = 2;
-const EVENT_REVISION_STAMP = "20260912T011500Z";
+const EVENT_REVISION = 3;
+const EVENT_REVISION_STAMP = "20260912T011800Z";
 
 function stampNumber(value: string): number {
   return Number(value.replace(/[^\d]/g, "").padEnd(14, "0"));
@@ -307,6 +316,14 @@ function markRevised(event: string): string {
 
 /** School feed often copies DTEND from DTSTART. Guess 90 minutes so calendar apps show a real game. */
 export const DEFAULT_GAME_MINUTES = 90;
+export const END_TIME_GUESS_NOTE = "End time is a guess.";
+
+function appendGuessNote(event: string): string {
+  const existing = getProperty(event, "DESCRIPTION");
+  if (existing?.includes(END_TIME_GUESS_NOTE)) return event;
+  const next = existing ? `${existing}\n${END_TIME_GUESS_NOTE}` : END_TIME_GUESS_NOTE;
+  return upsertProperty(event, "DESCRIPTION", icalEscape(next));
+}
 
 export function ensureGameDuration(event: string, minutes = DEFAULT_GAME_MINUTES): string {
   const startLine = event.match(/^DTSTART(?:;[^:]*)?:.*$/im)?.[0];
@@ -323,7 +340,7 @@ export function ensureGameDuration(event: string, minutes = DEFAULT_GAME_MINUTES
     ? `${endLine.slice(0, endLine.length - endValue.length)}${newEndValue}`
     : startLine.replace(/^DTSTART/i, "DTEND").replace(startValue, newEndValue);
   const withEnd = endLine ? event.replace(endLine, newEndLine) : event.replace(startLine, `${startLine}\n${newEndLine}`);
-  return markRevised(withEnd);
+  return markRevised(appendGuessNote(withEnd));
 }
 
 function isPrivateCalendarUrl(value: string): boolean {
@@ -365,11 +382,13 @@ function toUpcomingGame(event: string): UpcomingGame | undefined {
   if (!summary || !start) return undefined;
   const end = getProperty(event, "DTEND");
   const { when, sortKey } = formatWhen(start, end);
+  const description = getProperty(event, "DESCRIPTION");
   return {
     summary,
     location: getProperty(event, "LOCATION"),
     when,
     sortKey,
+    endGuessed: description?.includes(END_TIME_GUESS_NOTE) || undefined,
   };
 }
 
